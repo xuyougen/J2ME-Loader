@@ -19,7 +19,11 @@ class J2MEServiceRecord implements ServiceRecord {
 	}
 
 	public String getConnectionURL(int requiredSecurity, boolean mustBeMaster) {
-		StringBuilder sb = new StringBuilder("btspp://");
+		StringBuilder sb;
+		if (dev.btl2cap)
+			sb = new StringBuilder("btl2cap://");
+		else
+			sb = new StringBuilder("btspp://");
 		if (dev != null)
 			sb.append(dev.getBluetoothAddress());
 		else

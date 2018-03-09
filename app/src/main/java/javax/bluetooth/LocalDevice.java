@@ -156,11 +156,17 @@ public class LocalDevice implements ActivityResultListener {
 				// probably calling this for local device, so socket isn't opened
 				return new J2MEServiceRecord(null, conn.connUuid, false);
 			else
-				return new J2MEServiceRecord(new RemoteDevice(conn.socket.getRemoteDevice()), conn.connUuid, false);
+				return new J2MEServiceRecord(new RemoteDevice(conn.socket.getRemoteDevice(), false), conn.connUuid, false);
+		} if (notifier instanceof org.microemu.cldc.btl2cap.Connection) {
+			org.microemu.cldc.btl2cap.Connection conn = (org.microemu.cldc.btl2cap.Connection) notifier;
+			if (conn.socket == null)
+				// probably calling this for local device, so socket isn't opened
+				return new J2MEServiceRecord(null, conn.connUuid, false);
+			else
+				return new J2MEServiceRecord(new RemoteDevice(conn.socket.getRemoteDevice(), true), conn.connUuid, false);
 		} else
 			throw new IllegalArgumentException("notifier is not BTSPP connection");
 	}
-
 	// Not supported on Android due to API limitations
 	public void updateRecord(ServiceRecord srvRecord) throws ServiceRegistrationException {
 		if (srvRecord == null) {

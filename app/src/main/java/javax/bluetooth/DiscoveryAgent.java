@@ -96,7 +96,7 @@ public class DiscoveryAgent {
 							if (uuidExtra[i].uuid.equals(uuids[j].uuid) || uuidExtra[i].uuid.equals(byteSwappedUuid(uuids[j].uuid))) {
 								J2MEServiceRecord record = new J2MEServiceRecord(dev, uuids[j], false);
 								// Workaround to get service name
-								if (serviceName == null) {
+								if (!dev.btl2cap && serviceName == null) {
 									try {
 										BluetoothSocket bluetoothSocket = dev.dev.createInsecureRfcommSocketToServiceRecord(uuids[j].uuid);
 										if(!bluetoothSocket.isConnected()) {
@@ -148,7 +148,7 @@ public class DiscoveryAgent {
 		Set<BluetoothDevice> set = adapter.getBondedDevices();
 		RemoteDevice[] devices = new RemoteDevice[set.size()];
 		int i = 0;
-		for (BluetoothDevice device : set) devices[i++] = new RemoteDevice(device);
+		for (BluetoothDevice device : set) devices[i++] = new RemoteDevice(device, false);
 		return devices;
 	}
 
@@ -188,7 +188,7 @@ public class DiscoveryAgent {
 				String action = intent.getAction();
 				if (BluetoothDevice.ACTION_FOUND.equals(action)) {
 					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					RemoteDevice dev = new RemoteDevice(device);
+					RemoteDevice dev = new RemoteDevice(device, false);
 					DeviceClass cod = new DeviceClass(device.getBluetoothClass());
 					listener.deviceDiscovered(dev, cod);
 				} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
