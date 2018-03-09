@@ -157,11 +157,32 @@ public class Connection implements ConnectionImplementation, StreamConnectionNot
 
 			// Android 6.0.1 bug: UUID is reversed
 			// see https://issuetracker.google.com/issues/37075233
-			if (secure)
-				serverSocket = adapter.listenUsingRfcommWithServiceRecord(srvname, btUuid);
-			else
-				serverSocket = adapter.listenUsingInsecureRfcommWithServiceRecord(srvname, btUuid);
+			serverSocket = adapter.listenUsingInsecureRfcommWithServiceRecord(srvname, btUuid);
 
+			String finalSrvname = srvname;
+			// Send service name to client
+			Thread connectThread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						byte[] dstByte = new byte[256];
+						byte[] srcByte = finalSrvname.getBytes();
+						System.arraycopy(srcByte, 0, dstByte, 0, srcByte.length);
+						BluetoothSocket connectSocket = serverSocket.accept();
+						OutputStream os = connectSocket.getOutputStream();
+						os.write(dstByte);
+						os.flush();
+						serverSocket.close();
+						if (secure)
+							serverSocket = adapter.listenUsingRfcommWithServiceRecord(finalSrvname, btUuid);
+						else
+							serverSocket = adapter.listenUsingInsecureRfcommWithServiceRecord(finalSrvname, btUuid);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			connectThread.run();
 		} else {
 			StringBuilder sb = new StringBuilder(host);
 			for (int i = 2; i < sb.length(); i += 3)

@@ -8,12 +8,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Context;
 import javax.microedition.util.ContextHolder;
+
+import java.io.InputStream;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.io.IOException;
 
-import java.util.concurrent.locks.ReentrantLock;
 import android.os.Parcelable;
 import android.os.ParcelUuid;
 
@@ -34,14 +36,19 @@ public class DiscoveryAgent {
 
 	private class Transaction extends BroadcastReceiver {
 		public final int transID;
+		public final int[] attrs;
 		public final UUID[] uuids;
 		public final RemoteDevice dev;
 		public final DiscoveryListener listener;
 		public volatile boolean stop = false;
 		public volatile boolean discovering = false;
 
-		public Transaction(int transID, UUID[] uuids, RemoteDevice dev, DiscoveryListener listener) {
+		private String serviceName = null;
+		private int id;
+
+		public Transaction(int transID, int[] attrs, UUID[] uuids, RemoteDevice dev, DiscoveryListener listener) {
 			this.transID = transID;
+			this.attrs = attrs;
 			this.uuids = uuids;
 			this.dev = dev;
 			this.listener = listener;
@@ -87,7 +94,27 @@ public class DiscoveryAgent {
 							supportsSPP = true;
 						for (int j = 0; !stop && j < uuids.length; j++) {
 							if (uuidExtra[i].uuid.equals(uuids[j].uuid) || uuidExtra[i].uuid.equals(byteSwappedUuid(uuids[j].uuid))) {
-								records.add(new J2MEServiceRecord(dev, uuids[j], false));
+								J2MEServiceRecord record = new J2MEServiceRecord(dev, uuids[j], false);
+								// Workaround to get service name
+								if (serviceName == null) {
+									try {
+										BluetoothSocket bluetoothSocket = dev.dev.createInsecureRfcommSocketToServiceRecord(uuids[j].uuid);
+										if(!bluetoothSocket.isConnected()) {
+											bluetoothSocket.connect();
+										}
+										InputStream is = bluetoothSocket.getInputStream();
+										byte[] resByte = new byte[256];
+										is.read(resByte);
+										if (attrs != null && attrs.length > 0) {
+											serviceName = new String(resByte).trim();
+											record.setAttributeValue(attrs[0], new DataElement(DataElement.STRING, serviceName));
+										}
+										bluetoothSocket.close();
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+								}
+								records.add(record);
 							}
 						}
 					}
@@ -120,7 +147,8 @@ public class DiscoveryAgent {
 	public RemoteDevice[] retrieveDevices(int option) {
 		Set<BluetoothDevice> set = adapter.getBondedDevices();
 		RemoteDevice[] devices = new RemoteDevice[set.size()];
-		set.toArray(devices);
+		int i = 0;
+		for (BluetoothDevice device : set) devices[i++] = new RemoteDevice(device);
 		return devices;
 	}
 
@@ -220,7 +248,7 @@ public class DiscoveryAgent {
 			}
 		}
 
-		final Transaction curTrans = new Transaction(maxID, uuidSet, btDev, listener);
+		final Transaction curTrans = new Transaction(maxID, attrSet, uuidSet, btDev, listener);
 		transList.add(curTrans);
 		ContextHolder.getContext().registerReceiver(curTrans, new IntentFilter(BluetoothDevice.ACTION_UUID));
 
