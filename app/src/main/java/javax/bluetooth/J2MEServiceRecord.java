@@ -1,11 +1,12 @@
 package javax.bluetooth;
 
-import android.bluetooth.BluetoothSocket;
+import java.util.HashMap;
 
 class J2MEServiceRecord implements ServiceRecord {
 	private RemoteDevice dev;
 	private UUID uuid;
 	private boolean skipAfterWrite;
+	private HashMap<Integer, DataElement> dataElements = new HashMap<>();
 
 	public J2MEServiceRecord(RemoteDevice dev, UUID uuid, boolean skipAfterWrite) {
 		this.dev = dev;
@@ -56,30 +57,31 @@ class J2MEServiceRecord implements ServiceRecord {
 			throw new IllegalArgumentException("attrID is ServiceRecordHandle (0x0000)");
 		if (attrValue == null)
 			return false;
-		// Android does not support this, return success
+		dataElements.put(attrID, attrValue);
 		return true;
 	}
 
 	public DataElement getAttributeValue(int attrID) {
-		// Fake service name
-		if (attrID == 0x100)
-			return new DataElement(DataElement.STRING, "SOMENAME");
-		return null;
+		return dataElements.get(attrID);
 	}
 
 	public int[] getAttributeIDs() {
-		return new int[0];
+		int[] arr = new int[dataElements.size()];
+		int i = 0;
+		for (Integer val : dataElements.keySet()) arr[i++] = val;
+		return arr;
 	}
 
 	public void setDeviceServiceClasses(int classes) {
-		return;
 	}
 
 	public boolean populateRecord(int[] attrIDs) {
 		if (attrIDs == null)
 			throw new NullPointerException();
-		// Android does not support this, return success
-		return true;
+		for (int val : attrIDs) {
+			if (dataElements.containsKey(val)) return true;
+		}
+		return false;
 	}
 
 }
