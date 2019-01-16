@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2019 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package javax.microedition.sensor;
+package com.sun.midp.midlet;
 
-public class Unit {
-	private String symbol;
+import javax.microedition.midlet.MIDlet;
 
-	public Unit(String symbol) {
-		this.symbol = symbol;
+public class Scheduler {
+	private static Scheduler instance;
+
+	public static Scheduler getScheduler() {
+		if (instance == null) {
+			instance = new Scheduler();
+		}
+		return instance;
 	}
 
-	public static Unit getUnit(String symbol) {
-		return new Unit(symbol);
-	}
-
-	public String toString() {
-		return symbol;
+	public MIDlet getActiveMIDlet() {
+		return null;
 	}
 }
