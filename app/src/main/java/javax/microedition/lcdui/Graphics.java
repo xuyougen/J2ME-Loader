@@ -46,44 +46,31 @@ public class Graphics {
 	private Canvas canvas;
 	private Bitmap canvasBitmap;
 
-	private Paint drawPaint;
-	private Paint fillPaint;
-	private Paint imagePaint;
+	private Paint drawPaint = new Paint();
+	private Paint fillPaint = new Paint();
+	private Paint imagePaint = new Paint();
 
 	private int translateX;
 	private int translateY;
 
-	private Rect intRect;
-	private RectF floatRect;
-	private Path path;
+	private Rect intRect = new Rect();
+	private RectF floatRect = new RectF();
+	private Path path = new Path();
 
-	private DashPathEffect dpeffect;
+	private DashPathEffect dpeffect = new DashPathEffect(new float[]{5, 5}, 0);
 	private int stroke;
 
 	private boolean drawAntiAlias;
 	private boolean textAntiAlias;
 
-	private Font font;
+	private Font font = Font.getDefaultFont();
 
 	public Graphics() {
-		drawPaint = new Paint();
-		fillPaint = new Paint();
-		imagePaint = new Paint();
-
 		drawPaint.setStyle(Paint.Style.STROKE);
 		fillPaint.setStyle(Paint.Style.FILL);
-
-		dpeffect = new DashPathEffect(new float[]{5, 5}, 0);
 		setStrokeStyle(SOLID);
-
 		setAntiAlias(false);
 		setAntiAliasText(true);
-
-		font = Font.getDefaultFont();
-
-		intRect = new Rect();
-		floatRect = new RectF();
-		path = new Path();
 	}
 
 	public void reset() {
@@ -248,19 +235,23 @@ public class Graphics {
 	}
 
 	public int getClipX() {
-		return canvas.getClipBounds().left;
+		canvas.getClipBounds(intRect);
+		return intRect.left;
 	}
 
 	public int getClipY() {
-		return canvas.getClipBounds().top;
+		canvas.getClipBounds(intRect);
+		return intRect.top;
 	}
 
 	public int getClipWidth() {
-		return canvas.getClipBounds().width();
+		canvas.getClipBounds(intRect);
+		return intRect.width();
 	}
 
 	public int getClipHeight() {
-		return canvas.getClipBounds().height();
+		canvas.getClipBounds(intRect);
+		return intRect.height();
 	}
 
 	public void translate(int dx, int dy) {
@@ -488,5 +479,9 @@ public class Graphics {
 	public void getPixels(int[] pixels, int offset, int stride,
 						  int x, int y, int width, int height) {
 		canvasBitmap.getPixels(pixels, offset, stride, x, y, width, height);
+	}
+
+	public Bitmap getBitmap() {
+		return canvasBitmap;
 	}
 }

@@ -5,6 +5,7 @@
     <string name="navigation_drawer_open" translatable="false">Open navigation drawer</string>
     <string name="navigation_drawer_close" translatable="false">Close navigation drawer</string>
 
+    <string name="close">Close</string>
     <string name="exit">Exit</string>
     <string name="about">About</string>
     <string name="help">Help</string>
@@ -111,6 +112,7 @@
     <string name="layout_switch">Switch keylayout</string>
     <string name="hide_buttons">Hide buttons</string>
     <string name="take_screenshot">Take screenshot</string>
+    <string name="screenshot_saved">Screenshot has been saved to</string>
     <string name="common_settings">[COMMON SETTINGS]</string>
 
     <string name="pref_theme_title">Theme</string>
@@ -173,6 +175,7 @@
     <string name="mapping_dialog_title">Press a key</string>
     <string name="mapping_dialog_message" formatted="false">Current mapping: %1$s</string>
     <string name="reset_mapping">Reset</string>
+    <string name="parallel_screen_redrawing">Parallel screen redrawing</string>
 
 
 </resources>

@@ -17,6 +17,7 @@
 
 package javax.microedition.shell;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
@@ -46,10 +47,15 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.ViewHandler;
 import javax.microedition.lcdui.event.SimpleEvent;
+import javax.microedition.lcdui.overlay.OverlayView;
 import javax.microedition.lcdui.pointer.VirtualKeyboard;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.util.ContextHolder;
 
+import io.reactivex.SingleObserver;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import ru.playsoftware.j2meloader.R;
 import ru.playsoftware.j2meloader.config.ConfigActivity;
 
@@ -73,8 +79,14 @@ public class MicroActivity extends AppCompatActivity {
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		setTheme(sp.getString("pref_theme", "light"));
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_micro);
 		ContextHolder.setCurrentActivity(this);
+		setContentView(R.layout.activity_micro);
+		OverlayView overlayView = findViewById(R.id.vOverlay);
+		VirtualKeyboard vk = ContextHolder.getVk();
+		if (vk != null) {
+			vk.setView(overlayView);
+			overlayView.addLayer(vk);
+		}
 		layout = findViewById(R.id.displayable_container);
 		toolbar = findViewById(R.id.toolbar);
 		setSupportActionBar(toolbar);
@@ -127,7 +139,7 @@ public class MicroActivity extends AppCompatActivity {
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
-		if (hasFocus && current instanceof Canvas) {
+		if (hasFocus && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && current instanceof Canvas) {
 			hideSystemUI();
 		}
 	}
@@ -299,9 +311,27 @@ public class MicroActivity extends AppCompatActivity {
 	}
 
 	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		if (event.getKeyCode() == KeyEvent.KEYCODE_MENU && event.getAction() == KeyEvent.ACTION_DOWN) {
+			onKeyDown(event.getKeyCode(), event);
+			return true;
+		}
+		return super.dispatchKeyEvent(event);
+	}
+
+	@Override
+	public void openOptionsMenu() {
+		if (!actionBarEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && current instanceof Canvas) {
+			showSystemUI();
+		}
+		super.openOptionsMenu();
+	}
+
+	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch (keyCode) {
 			case KeyEvent.KEYCODE_BACK:
+			case KeyEvent.KEYCODE_MENU:
 				openOptionsMenu();
 				return true;
 		}
@@ -334,7 +364,7 @@ public class MicroActivity extends AppCompatActivity {
 				if (id == R.id.action_exit_midlet) {
 					showExitConfirmation();
 				} else if (id == R.id.action_take_screenshot) {
-					microLoader.takeScreenshot((Canvas) current);
+					takeScreenshot();
 				} else if (ContextHolder.getVk() != null) {
 					VirtualKeyboard vk = ContextHolder.getVk();
 					switch (id) {
@@ -367,6 +397,30 @@ public class MicroActivity extends AppCompatActivity {
 		}
 
 		return super.onOptionsItemSelected(item);
+	}
+
+	@SuppressLint("CheckResult")
+	private void takeScreenshot() {
+		microLoader.takeScreenshot((Canvas) current)
+				.subscribeOn(Schedulers.computation())
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribeWith(new SingleObserver<String>() {
+					@Override
+					public void onSubscribe(Disposable d) {
+					}
+
+					@Override
+					public void onSuccess(String s) {
+						Toast.makeText(MicroActivity.this, getString(R.string.screenshot_saved)
+								+ " " + s, Toast.LENGTH_LONG).show();
+					}
+
+					@Override
+					public void onError(Throwable e) {
+						e.printStackTrace();
+						Toast.makeText(MicroActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+					}
+				});
 	}
 
 	private void showHideButtonDialog() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2019 Kharchenko Yury
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package javax.microedition.lcdui.overlay;
 
-package javax.microedition.media.control;
+import javax.microedition.lcdui.Graphics;
 
-import javax.microedition.media.Control;
+public interface Layer {
 
-public interface PanControl extends Control {
-	public int setPan(int pan);
+	void paint(Graphics g);
 
-	public int getPan();
 }

@@ -18,7 +18,7 @@
 package javax.microedition.util;
 
 import android.content.Context;
-import android.content.Intent;
+import android.os.Process;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Display;
@@ -36,7 +36,6 @@ import java.io.InputStream;
 import javax.microedition.lcdui.pointer.VirtualKeyboard;
 import javax.microedition.shell.MyClassLoader;
 
-import ru.playsoftware.j2meloader.MainActivity;
 import ru.playsoftware.j2meloader.config.Config;
 
 public class ContextHolder {
@@ -93,12 +92,10 @@ public class ContextHolder {
 		}
 		// Add support for Siemens file path
 		resName = resName.replace('\\', '/');
-		try {
-			File resFile = new File(MyClassLoader.getResFolder(), resName);
-			byte[] data = new byte[(int) resFile.length()];
-			DataInputStream dis = new DataInputStream(new FileInputStream(resFile));
+		File resFile = new File(MyClassLoader.getResFolder(), resName);
+		byte[] data = new byte[(int) resFile.length()];
+		try (DataInputStream dis = new DataInputStream(new FileInputStream(resFile))) {
 			dis.readFully(data);
-			dis.close();
 			return new ByteArrayInputStream(data);
 		} catch (IOException e) {
 			Log.d(TAG, "Can't load res " + resName + " on path: " + MyClassLoader.getResFolder().getPath() + resName);
@@ -127,13 +124,10 @@ public class ContextHolder {
 	}
 
 	/**
-	 * Restart the emulator.
+	 * Kill midlet process.
 	 */
 	public static void notifyDestroyed() {
-		Intent intent = new Intent(currentActivity, MainActivity.class);
-		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		currentActivity.startActivity(intent);
 		currentActivity.finish();
-		Runtime.getRuntime().exit(0);
+		Process.killProcess(Process.myPid());
 	}
 }

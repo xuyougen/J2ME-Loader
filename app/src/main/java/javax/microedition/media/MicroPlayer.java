@@ -24,9 +24,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.microedition.amms.control.PanControl;
 import javax.microedition.amms.control.audioeffect.EqualizerControl;
 import javax.microedition.media.control.MetaDataControl;
-import javax.microedition.media.control.PanControl;
 import javax.microedition.media.control.ToneControl;
 import javax.microedition.media.control.VolumeControl;
 import javax.microedition.media.protocol.DataSource;
@@ -74,6 +74,7 @@ public class MicroPlayer extends BasePlayer implements MediaPlayer.OnCompletionL
 
 	@Override
 	public Control getControl(String controlType) {
+		checkRealized();
 		if (!controlType.contains(".")) {
 			controlType = "javax.microedition.media.control." + controlType;
 		}
@@ -82,6 +83,7 @@ public class MicroPlayer extends BasePlayer implements MediaPlayer.OnCompletionL
 
 	@Override
 	public Control[] getControls() {
+		checkRealized();
 		return controls.values().toArray(new Control[0]);
 	}
 
@@ -313,6 +315,11 @@ public class MicroPlayer extends BasePlayer implements MediaPlayer.OnCompletionL
 
 	@Override
 	public void setMute(boolean mute) {
+		if (state == CLOSED) {
+			// Avoid IllegalStateException in MediaPlayer.setVolume()
+			return;
+		}
+
 		this.mute = mute;
 		updateVolume();
 	}
@@ -324,6 +331,11 @@ public class MicroPlayer extends BasePlayer implements MediaPlayer.OnCompletionL
 
 	@Override
 	public int setLevel(int level) {
+		if (state == CLOSED) {
+			// Avoid IllegalStateException in MediaPlayer.setVolume()
+			return this.level;
+		}
+
 		if (level < 0) {
 			level = 0;
 		} else if (level > 100) {

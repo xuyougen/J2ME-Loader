@@ -74,6 +74,7 @@ public class ConfigActivity extends BaseActivity implements View.OnClickListener
 	protected CheckBox cxFilter;
 	protected CheckBox cxImmediate;
 	protected CheckBox cxHwAcceleration;
+	protected CheckBox cxParallel;
 	protected CheckBox cxShowFps;
 
 	protected EditText tfFontSizeSmall;
@@ -147,6 +148,7 @@ public class ConfigActivity extends BaseActivity implements View.OnClickListener
 		cxFilter = findViewById(R.id.cxFilter);
 		cxImmediate = findViewById(R.id.cxImmediate);
 		cxHwAcceleration = findViewById(R.id.cxHwAcceleration);
+		cxParallel = findViewById(R.id.cxParallel);
 		cxShowFps = findViewById(R.id.cxShowFps);
 
 		tfFontSizeSmall = findViewById(R.id.tfFontSizeSmall);
@@ -212,21 +214,29 @@ public class ConfigActivity extends BaseActivity implements View.OnClickListener
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				Integer enteredProgress = Integer.valueOf(s.toString());
-				sbScaleRatio.setProgress(enteredProgress);
+				sbScaleRatio.setProgress(Integer.parseInt(s.toString()));
 			}
 
 			@Override
 			public void afterTextChanged(Editable s) {
 			}
 		});
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+			cxHwAcceleration.setOnCheckedChangeListener((buttonView, isChecked) -> {
+				if (isChecked) {
+					cxParallel.setChecked(false);
+				}
+			});
+			cxParallel.setOnCheckedChangeListener((buttonView, isChecked) -> {
+				if (isChecked) {
+					cxHwAcceleration.setChecked(false);
+				}
+			});
+		}
 
 		loadParams();
 		applyConfiguration();
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			cxHwAcceleration.setVisibility(View.VISIBLE);
-		}
 		cxVKFeedback.setEnabled(cxShowKeyboard.isChecked());
 		cxShowKeyboard.setOnClickListener(v -> {
 			if (!((CheckBox) v).isChecked()) {
@@ -335,6 +345,7 @@ public class ConfigActivity extends BaseActivity implements View.OnClickListener
 		cxKeepAspectRatio.setChecked(params.getBoolean("ScreenKeepAspectRatio", true));
 		cxFilter.setChecked(params.getBoolean("ScreenFilter", false));
 		cxImmediate.setChecked(params.getBoolean("ImmediateMode", false));
+		cxParallel.setChecked(params.getBoolean("ParallelRedrawScreen", false));
 		cxHwAcceleration.setChecked(params.getBoolean("HwAcceleration", false));
 		cxShowFps.setChecked(params.getBoolean("ShowFps", false));
 
@@ -380,6 +391,7 @@ public class ConfigActivity extends BaseActivity implements View.OnClickListener
 			params.putBoolean("ScreenFilter", cxFilter.isChecked());
 			params.putBoolean("ImmediateMode", cxImmediate.isChecked());
 			params.putBoolean("HwAcceleration", cxHwAcceleration.isChecked());
+			params.putBoolean("ParallelRedrawScreen", cxParallel.isChecked());
 			params.putBoolean("ShowFps", cxShowFps.isChecked());
 
 			params.putInt("FontSizeSmall",
@@ -431,6 +443,7 @@ public class ConfigActivity extends BaseActivity implements View.OnClickListener
 			boolean immediateMode = cxImmediate.isChecked();
 			boolean touchInput = cxTouchInput.isChecked();
 			boolean hwAcceleration = cxHwAcceleration.isChecked();
+			boolean parallel = cxParallel.isChecked();
 			boolean showFps = cxShowFps.isChecked();
 			SparseIntArray intArray = KeyMapper.getArrayPref(this);
 
@@ -451,7 +464,7 @@ public class ConfigActivity extends BaseActivity implements View.OnClickListener
 					screenKeepAspectRatio, screenScaleRatio);
 			Canvas.setFilterBitmap(screenFilter);
 			EventQueue.setImmediate(immediateMode);
-			Canvas.setHardwareAcceleration(hwAcceleration);
+			Canvas.setHardwareAcceleration(hwAcceleration, parallel);
 			Canvas.setBackgroundColor(screenBackgroundColor);
 			Canvas.setKeyMapping(intArray);
 			Canvas.setHasTouchInput(touchInput);
