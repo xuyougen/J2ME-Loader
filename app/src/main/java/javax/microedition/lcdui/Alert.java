@@ -20,10 +20,11 @@ package javax.microedition.lcdui;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.BitmapDrawable;
-import android.support.v7.app.AlertDialog;
 import android.view.View;
 
 import java.util.Arrays;
+
+import androidx.appcompat.app.AlertDialog;
 
 public class Alert extends Screen implements DialogInterface.OnClickListener {
 	public static final int FOREVER = -2;
@@ -97,7 +98,9 @@ public class Alert extends Screen implements DialogInterface.OnClickListener {
 
 		builder.setTitle(getTitle());
 		builder.setMessage(getString());
-		builder.setOnDismissListener(dialog -> Display.getDisplay(null).setCurrent(nextDisplayable));
+		builder.setOnDismissListener(dialog -> {
+			if (nextDisplayable != null) Display.getDisplay(null).setCurrent(nextDisplayable);
+		});
 
 		if (image != null) {
 			builder.setIcon(new BitmapDrawable(context.getResources(), image.getBitmap()));

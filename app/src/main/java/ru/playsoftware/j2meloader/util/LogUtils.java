@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Nikita Shakarun
+ * Copyright 2019 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package ru.playsoftware.j2meloader.hockeyapp;
+package ru.playsoftware.j2meloader.util;
 
-import android.content.Context;
+import java.io.File;
+import java.io.IOException;
 
-import org.acra.config.CoreConfiguration;
-import org.acra.sender.ReportSender;
-import org.acra.sender.ReportSenderFactory;
+import ru.playsoftware.j2meloader.config.Config;
 
-import androidx.annotation.NonNull;
+public class LogUtils {
 
-public class HockeySenderFactory implements ReportSenderFactory {
-	@NonNull
-	@Override
-	public ReportSender create(@NonNull Context context, @NonNull CoreConfiguration config) {
-		return new HockeySender();
+	public static void writeLog() throws IOException {
+		File logFile = new File(Config.EMULATOR_DIR, "log.txt");
+		if (logFile.exists()) {
+			logFile.delete();
+		}
+		Runtime.getRuntime().exec("logcat -t 500 -f " + logFile);
 	}
 
-	@Override
-	public boolean enabled(@NonNull CoreConfiguration config) {
-		return true;
-	}
 }

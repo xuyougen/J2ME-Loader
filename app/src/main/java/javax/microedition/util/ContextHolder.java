@@ -19,7 +19,6 @@ package javax.microedition.util;
 
 import android.content.Context;
 import android.os.Process;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
@@ -32,10 +31,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.microedition.lcdui.pointer.VirtualKeyboard;
 import javax.microedition.shell.MyClassLoader;
 
+import androidx.appcompat.app.AppCompatActivity;
 import ru.playsoftware.j2meloader.config.Config;
 
 public class ContextHolder {
@@ -86,21 +88,42 @@ public class ContextHolder {
 			Log.d(TAG, "Can't load res on empty path");
 			return null;
 		}
-		if (resName.charAt(0) != '/' && resClass != null && resClass.getPackage() != null) {
+		if (resName.charAt(0) == '/') {
+			resName = resName.substring(1);
+		} else if (resClass != null && resClass.getPackage() != null) {
 			String className = resClass.getPackage().getName().replace('.', '/');
 			resName = className + "/" + resName;
 		}
 		// Add support for Siemens file path
 		resName = resName.replace('\\', '/');
-		File resFile = new File(MyClassLoader.getResFolder(), resName);
-		byte[] data = new byte[(int) resFile.length()];
-		try (DataInputStream dis = new DataInputStream(new FileInputStream(resFile))) {
-			dis.readFully(data);
-			return new ByteArrayInputStream(data);
-		} catch (IOException e) {
-			Log.d(TAG, "Can't load res " + resName + " on path: " + MyClassLoader.getResFolder().getPath() + resName);
+		// Remove double slashes
+		resName = resName.replace("//", "/");
+		try {
+			return getResource(resName);
+		} catch (IOException | NullPointerException e) {
+			Log.d(TAG, "Can't load res: " + resName);
 			return null;
 		}
+	}
+
+	private static InputStream getResource(String resName) throws IOException {
+		InputStream is;
+		byte[] data;
+		File midletResFile = new File(Config.APP_DIR,
+				MyClassLoader.getName() + Config.MIDLET_RES_FILE);
+		if (midletResFile.exists()) {
+			ZipFile zipFile = new ZipFile(midletResFile);
+			ZipEntry entry = zipFile.getEntry(resName);
+			is = zipFile.getInputStream(entry);
+			data = new byte[(int) entry.getSize()];
+		} else {
+			File resFile = new File(MyClassLoader.getResFolder(), resName);
+			is = new FileInputStream(resFile);
+			data = new byte[(int) resFile.length()];
+		}
+		DataInputStream dis = new DataInputStream(is);
+		dis.readFully(data);
+		return new ByteArrayInputStream(data);
 	}
 
 	public static FileOutputStream openFileOutput(String name) throws FileNotFoundException {

@@ -26,15 +26,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.ListFragment;
-import android.support.v4.content.pm.ShortcutInfoCompat;
-import android.support.v4.content.pm.ShortcutManagerCompat;
-import android.support.v4.graphics.drawable.IconCompat;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.SearchView;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -48,14 +39,25 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.jakewharton.rxbinding2.support.v7.widget.RxSearchView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.nononsenseapps.filepicker.FilePickerActivity;
 import com.nononsenseapps.filepicker.Utils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+import androidx.core.graphics.drawable.IconCompat;
+import androidx.fragment.app.ListFragment;
+import io.reactivex.Observable;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -75,6 +77,7 @@ import ru.playsoftware.j2meloader.info.HelpDialogFragment;
 import ru.playsoftware.j2meloader.settings.SettingsActivity;
 import ru.playsoftware.j2meloader.util.AppUtils;
 import ru.playsoftware.j2meloader.util.JarConverter;
+import ru.playsoftware.j2meloader.util.LogUtils;
 
 public class AppsListFragment extends ListFragment {
 
@@ -316,8 +319,22 @@ public class AppsListFragment extends ListFragment {
 		inflater.inflate(R.menu.main, menu);
 		final MenuItem searchItem = menu.findItem(R.id.action_search);
 		SearchView searchView = (SearchView) searchItem.getActionView();
-		Disposable searchViewDisposable = RxSearchView.queryTextChanges(searchView)
-				.debounce(300, TimeUnit.MILLISECONDS)
+		Disposable searchViewDisposable = Observable.create((ObservableOnSubscribe<String>) emitter -> {
+			searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+				@Override
+				public boolean onQueryTextSubmit(String query) {
+					emitter.onNext(query);
+					return true;
+				}
+
+				@Override
+				public boolean onQueryTextChange(String newText) {
+					emitter.onNext(newText);
+					return true;
+				}
+			});
+		}).debounce(300, TimeUnit.MILLISECONDS)
+				.map(String::toLowerCase)
 				.distinctUntilChanged()
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(charSequence -> adapter.getFilter().filter(charSequence));
@@ -346,6 +363,15 @@ public class AppsListFragment extends ListFragment {
 			case R.id.action_donate:
 				Intent donationsIntent = new Intent(getActivity(), DonationsActivity.class);
 				startActivity(donationsIntent);
+				break;
+			case R.id.action_save_log:
+				try {
+					LogUtils.writeLog();
+					Toast.makeText(getActivity(), R.string.log_saved, Toast.LENGTH_SHORT).show();
+				} catch (IOException e) {
+					e.printStackTrace();
+					Toast.makeText(getActivity(), R.string.error, Toast.LENGTH_SHORT).show();
+				}
 				break;
 			case R.id.action_exit_app:
 				getActivity().finish();

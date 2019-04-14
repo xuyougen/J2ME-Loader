@@ -70,6 +70,7 @@ public abstract class Item implements View.OnCreateContextMenuListener {
 
 	private ArrayList<Command> commands = new ArrayList<>();
 	private ItemCommandListener listener = null;
+	private Command defaultCommand;
 
 	private SimpleEvent msgSetContextMenuListener = new SimpleEvent() {
 		@Override
@@ -255,17 +256,18 @@ public abstract class Item implements View.OnCreateContextMenuListener {
 
 	public void removeCommand(Command cmd) {
 		commands.remove(cmd);
+		if (defaultCommand == cmd) {
+			defaultCommand = null;
+		}
 	}
 
 	public void setDefaultCommand(Command cmd) {
+		defaultCommand = cmd;
 		if (cmd == null) {
 			return;
 		}
-		addCommand(cmd);
-	}
-
-	public void removeAllCommands() {
-		commands.clear();
+		commands.remove(cmd);
+		commands.add(0, cmd);
 	}
 
 	public void setItemCommandListener(ItemCommandListener listener) {
@@ -322,5 +324,11 @@ public abstract class Item implements View.OnCreateContextMenuListener {
 			}
 		}
 		return false;
+	}
+
+	public void fireDefaultCommandAction() {
+		if (defaultCommand != null) {
+			owner.postEvent(CommandActionEvent.getInstance(listener, defaultCommand, this));
+		}
 	}
 }

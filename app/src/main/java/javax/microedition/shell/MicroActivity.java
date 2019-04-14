@@ -25,10 +25,6 @@ import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,6 +34,7 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 
 import javax.microedition.lcdui.Canvas;
@@ -52,12 +49,17 @@ import javax.microedition.lcdui.pointer.VirtualKeyboard;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.util.ContextHolder;
 
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import ru.playsoftware.j2meloader.R;
 import ru.playsoftware.j2meloader.config.ConfigActivity;
+import ru.playsoftware.j2meloader.util.LogUtils;
 
 public class MicroActivity extends AppCompatActivity {
 	private static final int ORIENTATION_DEFAULT = 0;
@@ -365,7 +367,10 @@ public class MicroActivity extends AppCompatActivity {
 					showExitConfirmation();
 				} else if (id == R.id.action_take_screenshot) {
 					takeScreenshot();
+				} else if (id == R.id.action_save_log) {
+					saveLog();
 				} else if (ContextHolder.getVk() != null) {
+					// Handled only when virtual keyboard is enabled
 					VirtualKeyboard vk = ContextHolder.getVk();
 					switch (id) {
 						case R.id.action_layout_edit_mode:
@@ -418,9 +423,19 @@ public class MicroActivity extends AppCompatActivity {
 					@Override
 					public void onError(Throwable e) {
 						e.printStackTrace();
-						Toast.makeText(MicroActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+						Toast.makeText(MicroActivity.this, R.string.error, Toast.LENGTH_SHORT).show();
 					}
 				});
+	}
+
+	private void saveLog() {
+		try {
+			LogUtils.writeLog();
+			Toast.makeText(this, R.string.log_saved, Toast.LENGTH_SHORT).show();
+		} catch (IOException e) {
+			e.printStackTrace();
+			Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
+		}
 	}
 
 	private void showHideButtonDialog() {
